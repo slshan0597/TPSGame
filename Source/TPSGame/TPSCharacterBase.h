@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "TPSCharacterBase.generated.h"
 
+class UTPSHealthComponent;
+
 /**
  * 플레이어와 적의 공통 부모 클래스
  *  - 체력, 사망
@@ -18,17 +20,25 @@ class TPSGAME_API ATPSCharacterBase : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ATPSCharacterBase();
 
-//protected:
-//	// Called when the game starts or when spawned
-//	virtual void BeginPlay() override;
-//
-//public:	
-//	// Called every frame
-//	virtual void Tick(float DeltaTime) override;
-//
-//	// Called to bind functionality to input
-//	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UFUNCTION(BlueprintPure, Category = "Health")
+	UTPSHealthComponent* GetHealthComponent() const { return HealthComponent; }
+
+	UFUNCTION(BlueprintPure, Category = "Health")
+	bool IsDead() const;
+
+protected:
+	virtual void BeginPlay() override;
+
+	// 체력 컴포넌트의 OnDeath에 연결, 서버와 모든 클라이언트에서 호출됨
+	UFUNCTION()
+	virtual void HandleDeath(AActor* Victim, AController* KillerController);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UTPSHealthComponent> HealthComponent;
+
+	// 시체가 사라지기까지의 시간(초)
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+	float CorpseLifeSpan = 60.f;
 };
