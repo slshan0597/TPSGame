@@ -79,6 +79,19 @@ bool UTPSInventoryComponent::AddItem(UTPSItemData* Item, int32 Quantity)
 		Slot.Quantity += Added;
 		Remaining	  -= Added;
 	}
+
+	while (Remaining > 0)
+	{
+		FTPSInventorySlot NewSlot;
+
+		NewSlot.Item	 =  Item;
+		NewSlot.Quantity =  FMath::Min(MaxStack, Remaining);
+		Remaining		 -= NewSlot.Quantity;
+
+		Slots.Add(NewSlot);
+	}
+
+	return true;
 }
 
 /**
@@ -113,9 +126,9 @@ bool UTPSInventoryComponent::RemoveItem(UTPSItemData* Item, int32 Quantity)
 
 		// 칸이 비면 그 칸을 배열에서 지움
 		if (Slots[i].Quantity <= 0) Slots.RemoveAt(i);
-
-		return true;
 	}
+
+	return true;
 }
 
 /**
