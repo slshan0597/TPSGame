@@ -2,6 +2,7 @@
 
 
 #include "TPSPlayerCharacter.h"
+#include "TPSInventoryComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -48,6 +49,8 @@ ATPSPlayerCharacter::ATPSPlayerCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);		// 카메라를 스프링 암의 끝부분(소켓)에 부착
 	FollowCamera->bUsePawnControlRotation = false;
 	FollowCamera->SetFieldOfView(DefaultFOV);
+
+	InventoryComponent = CreateDefaultSubobject<UTPSInventoryComponent>(TEXT("InventoryComponent"));
 }
 
 /**
@@ -101,12 +104,15 @@ void ATPSPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 	if (!EIC) return;
 
-	EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATPSPlayerCharacter::Move);
-	EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATPSPlayerCharacter::Look);
-	EIC->BindAction(JumpAction, ETriggerEvent::Started,   this, &ACharacter::Jump);
-	EIC->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-	EIC->BindAction(AimAction,  ETriggerEvent::Started,   this, &ATPSPlayerCharacter::OnAimPressed);
-	EIC->BindAction(AimAction,  ETriggerEvent::Completed, this, &ATPSPlayerCharacter::OnAimReleased);
+	EIC->BindAction(MoveAction,   ETriggerEvent::Triggered, this, &ATPSPlayerCharacter::Move);
+	EIC->BindAction(LookAction,   ETriggerEvent::Triggered, this, &ATPSPlayerCharacter::Look);
+	EIC->BindAction(JumpAction,   ETriggerEvent::Started,   this, &ACharacter::Jump);
+	EIC->BindAction(JumpAction,   ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+	EIC->BindAction(AimAction,    ETriggerEvent::Started,   this, &ATPSPlayerCharacter::OnAimPressed);
+	EIC->BindAction(AimAction,    ETriggerEvent::Completed, this, &ATPSPlayerCharacter::OnAimReleased);
+	EIC->BindAction(FireAction,   ETriggerEvent::Started,	this, &ATPSPlayerCharacter::OnFirePressed);
+	EIC->BindAction(FireAction,   ETriggerEvent::Completed, this, &ATPSPlayerCharacter::OnFireReleased);
+	EIC->BindAction(ReloadAction, ETriggerEvent::Started,	this, &ATPSPlayerCharacter::OnReloadPressed);
 }
 
 void ATPSPlayerCharacter::Tick(float DeltaSeconds)
@@ -184,7 +190,7 @@ void ATPSPlayerCharacter::SetCombatState(bool bAiming, bool bFiring)
 }
 
 // 클라이언트가 보낸 요청을 서버에서 실행하는 함수
-// 구현에는 이름 뒤에 '_Implementation'을 붙이느 게 언리얼의 규칙
+// 구현에는 이름 뒤에 '_Implementation'을 붙이는 게 언리얼의 규칙
 // 서버에서 해당 변수들이 바뀌면, 앞에서 등록한 복제 설정에 따라 다른 플레이어에게 자동으로 전송
 void ATPSPlayerCharacter::ServerSetCombatState_Implementation(bool bAiming, bool bFiring)
 {
@@ -215,4 +221,24 @@ void ATPSPlayerCharacter::UpdateRotationMode()
 	// 두 설정은 항상 반대 값이어야 함
 	GetCharacterMovement()->bOrientRotationToMovement = !bStrafe;
 	GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : DefaultWalkSpeed;
+}
+
+/**
+ * 사격/재장전
+ */
+void ATPSPlayerCharacter::OnFirePressed()
+{
+	SetCombatState(bIsAiming, true);
+	StartFire();
+}
+
+void ATPSPlayerCharacter::OnFireReleased()
+{
+	SetCombatState(bIsAiming, false);
+	StopFire();
+}
+
+void ATPSPlayerCharacter::OnReloadPressed()
+{
+	Reload();
 }

@@ -11,9 +11,10 @@ class  UCameraComponent;
 class  UInputMappingContext;
 class  UInputAction;
 struct FInputActionValue;
+class  UTPSInventoryComponent;
 
 /**
- * 3인칭 슬더뷰 플레이어 캐릭터
+ * 3인칭 숄더뷰 플레이어 캐릭터
  */
 UCLASS()
 class TPSGAME_API ATPSPlayerCharacter : public ATPSCharacterBase
@@ -31,6 +32,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Aim")
 	bool IsAiming() const { return bIsAiming; }
 
+	UFUNCTION(BlueprintPure, Category = "Inventory")
+	UTPSInventoryComponent* GetInventory() const { return InventoryComponent; }
+
 protected:
 	// 카메라
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
@@ -45,6 +49,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera") float AimFOV			= 65.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Camera") float AimInterpSpeed	= 12.f;
 
+	// 인벤토리
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UTPSInventoryComponent> InventoryComponent;
+
+	// 이동
 	UPROPERTY(EditDefaultsOnly, Category = "Movement") float DefaultWalkSpeed = 450.f;
 	UPROPERTY(EditDefaultsOnly, Category = "Movement") float AimWalkSpeed	  = 220.f;
 
@@ -54,6 +63,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input") TObjectPtr<UInputAction>		 LookAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input") TObjectPtr<UInputAction>		 JumpAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input") TObjectPtr<UInputAction>		 AimAction;
+	UPROPERTY(EditDefaultsOnly, Category = "Input") TObjectPtr<UInputAction>		 FireAction;
+	UPROPERTY(EditDefaultsOnly, Category = "Input") TObjectPtr<UInputAction>		 ReloadAction;
 
 private:
 	void Move(const FInputActionValue& Value);
@@ -61,10 +72,7 @@ private:
 	void OnAimPressed();
 	void OnAimReleased();
 
-	/**
-	 * 조준 동기화
-	 *  - 조준/사격 상태를 로컬에 적용하고 서버로 전송
-	 */
+	// 조준 동기화 (조준/사격 상태를 로컬에 적용하고 서버로 전송)
 	void SetCombatState(bool bAiming, bool bFiring);
 
 	// 조준 또는 사격 중에 카메라 방향을 바라보는 스트레이프 모드
@@ -81,4 +89,9 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
 	bool bIsFiring = false;
+
+	// 사격, 재장전
+	void OnFirePressed();
+	void OnFireReleased();
+	void OnReloadPressed();
 };

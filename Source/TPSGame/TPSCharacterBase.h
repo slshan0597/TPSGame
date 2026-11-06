@@ -7,6 +7,7 @@
 #include "TPSCharacterBase.generated.h"
 
 class UTPSHealthComponent;
+class ATPSWeapon;
 
 /**
  * 플레이어와 적의 공통 부모 클래스
@@ -28,6 +29,20 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Health")
 	bool IsDead() const;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void Destroyed()															 override;
+
+	// 조작 주체(로컬 플레이어 또는 서버의 AI)에서 호출
+	UFUNCTION(BlueprintCallable, Category = "Combat") void StartFire();
+	UFUNCTION(BlueprintCallable, Category = "Combat") void StopFire();
+	UFUNCTION(BlueprintCallable, Category = "Combat") void Reload();
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	ATPSWeapon* GetWeapon() const { return CurrentWeapon; }
+
+	// 무기를 생성해서 손에 장착 (서버 전용)
+	ATPSWeapon* SpawnAndEquipWeapon(TSubclassOf<ATPSWeapon> WeaponClass);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -41,4 +56,14 @@ protected:
 	// 시체가 사라지기까지의 시간(초)
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 	float CorpseLifeSpan = 60.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<ATPSWeapon> DefaultWeaponClass;
+
+	// 무기를 붙일 스켈레탈 메시 소켓(또는 본) 이름
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	FName WeaponSocketName = TEXT("hand_r");
+
+	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<ATPSWeapon> CurrentWeapon;
 };
